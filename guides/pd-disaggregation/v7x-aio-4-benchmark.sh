@@ -3,6 +3,11 @@
 # ==============================================================================
 # Configuration & Setup
 # ==============================================================================
+source v7x-aio-0-env.sh
+
+# Config kubectl so kubectl context points to correct cluster and locaiton.
+gcloud container clusters get-credentials $CLUSTER --location=$LOCATION
+
 NAMESPACE="${NAMESPACE:-llm-d-pd}"
 GATEWAY_NAME="${GATEWAY_NAME:-infra-pd-inference-gateway}"
 BENCHMARK_DIR="v7x-benchmark"

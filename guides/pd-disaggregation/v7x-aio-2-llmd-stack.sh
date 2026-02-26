@@ -3,6 +3,9 @@
 # Source the env vars
 source v7x-aio-0-env.sh
 
+# Config kubectl
+gcloud container clusters get-credentials $CLUSTER --location=$LOCATION
+
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 

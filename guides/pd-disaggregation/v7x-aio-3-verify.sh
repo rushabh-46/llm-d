@@ -5,6 +5,9 @@
 # ==============================================================================
 source v7x-aio-0-env.sh
 
+# Config kubectl so kubectl context points to correct cluster and locaiton.
+gcloud container clusters get-credentials $CLUSTER --location=$LOCATION
+
 NAMESPACE="${NAMESPACE:-llm-d-pd}"
 # Colors for output
 YELLOW='\033[0;33m'
