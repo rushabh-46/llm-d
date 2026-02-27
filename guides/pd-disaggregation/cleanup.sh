@@ -2,6 +2,7 @@
 
 source v7x-aio-0-env.sh
 
+kubectl delete -f gaie-epp-health-check-policy.yaml -n ${NAMESPACE}
 kubectl delete -f httproute.gke.yaml -n ${NAMESPACE}
 helmfile destroy -e gke_tpu -n ${NAMESPACE}
 
