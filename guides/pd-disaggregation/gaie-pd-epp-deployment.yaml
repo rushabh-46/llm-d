@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gaie-pd-epp
+  namespace: llm-d-pd
+  labels:
+    app.kubernetes.io/name: gaie-pd-epp
+    app.kubernetes.io/version: v1.2.0-rc.1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      inferencepool: gaie-pd-epp
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        inferencepool: gaie-pd-epp
+    spec:
+      serviceAccountName: gaie-pd-epp
+      containers:
+      - name: epp
+        image: ghcr.io/llm-d/llm-d-inference-scheduler:v0.4.0-rc.1
+        imagePullPolicy: Always
+        args:
+        - --pool-name
+        - gaie-pd
+        - --pool-namespace
+        - llm-d-pd
+        - --pool-group
+        - inference.networking.k8s.io
+        - --zap-encoder
+        - json
+        - --grpc-health-port
+        - "9230"
+        - --config-file
+        - /config/pd-config.yaml
+        - --v
+        - "1"
+        - --tracing=false
+        - --metrics-endpoint-auth=false
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        ports:
+        - containerPort: 9002
+          name: grpc
+        - containerPort: 9230
+          name: grpc-health
+        - containerPort: 9090
+          name: metrics
+        livenessProbe:
+          grpc:
+            port: 9230
+            service: inference-extension
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          grpc:
+            port: 9230
+            service: inference-extension
+          periodSeconds: 2
+        volumeMounts:
+        - mountPath: /config
+          name: plugins-config-volume
+      volumes:
+      - name: plugins-config-volume
+        configMap:
+          name: gaie-pd-epp

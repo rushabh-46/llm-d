@@ -27,3 +27,11 @@ helmfile apply -e gke_tpu -n ${NAMESPACE}
 
 # Install HTTP route
 kubectl apply -f httproute.gke.yaml -n ${NAMESPACE}
+
+# Overwrite the default gaie-pd-epp health check policy to set
+# gaie-pd-epp health check port from default one to an allowlisted one
+kubectl apply -f gaie-pd-epp-health-check-policy.yaml
+
+# Replace the default gaie-pd-epp deployment to update gaie-pd-epp
+# to listen to the allowlisted grpc-health-check port
+kubectl replace -f gaie-pd-epp-deployment.yaml

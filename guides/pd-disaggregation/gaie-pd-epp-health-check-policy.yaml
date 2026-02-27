@@ -1,0 +1,15 @@
+apiVersion: networking.gke.io/v1
+kind: HealthCheckPolicy
+metadata:
+  name: gaie-pd-epp-health-check-policy
+  namespace: llm-d-pd
+spec:
+  targetRef:
+    group: ""
+    kind: Service
+    name: gaie-pd-epp
+  default:
+    config:
+      type: GRPC
+      grpcHealthCheck:
+        port: 9230
