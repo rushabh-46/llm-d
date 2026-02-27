@@ -117,7 +117,9 @@ echo "Targeting Endpoint: $ENDPOINT"
 
 # 4.1: Check /v1/models
 echo -e "\n> Requesting /v1/models..."
-MODELS_RESPONSE=$(curl -s "${ENDPOINT}/v1/models" -H "Content-Type: application/json")
+MODELS_RESPONSE=$(kubectl run -it --rm --quiet --restart=Never \
+  curl --image=curlimages/curl -n llm-d-pd -- \
+  curl -s "${ENDPOINT}/v1/models" -H "Content-Type: application/json" 2>/dev/null)
 
 # Validate valid JSON response
 if ! echo "$MODELS_RESPONSE" | jq empty > /dev/null 2>&1; then
@@ -144,9 +146,11 @@ COMPLETION_PAYLOAD=$(jq -n \
                   --arg prompt "How are you today?" \
                   '{model: $model, max_tokens: 64, prompt: $prompt}')
 
-COMPLETION_RESPONSE=$(curl -s -X POST "${ENDPOINT}/v1/completions" \
+COMPLETION_RESPONSE=$(kubectl run -it --rm --quiet --restart=Never \
+  curl --image=curlimages/curl -n llm-d-pd -- \
+  curl -s -X POST "${ENDPOINT}/v1/completions" \
     -H 'Content-Type: application/json' \
-    -d "$COMPLETION_PAYLOAD")
+    -d "$COMPLETION_PAYLOAD" 2>/dev/null)
 
 # Check for success in response
 # We look for "choices" array which indicates a successful generation
