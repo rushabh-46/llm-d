@@ -76,9 +76,6 @@ else
     --reservation=$RESERVATION
 fi
 
-# Config kubectl
-gcloud container clusters get-credentials $CLUSTER --location=$LOCATION
-
 # Create proxy only subnet needed by GKE gateway
 RET=$(gcloud compute networks subnets list --filter="name~^${SUBNET_NAME}$" --format="value(name)")
 if [ -n "${RET}" ]; then
@@ -93,7 +90,11 @@ else
     --range=$CIDR_RANGE
 fi
 
-# Create firewall rule with source ranges described in GCP docs
+# Config kubectl so kubectl context points to correct cluster and locaiton.
+gcloud container clusters get-credentials $CLUSTER --location=$LOCATION
+
+# Create firewall rule with source ranges described in
+# https://docs.cloud.google.com/kubernetes-engine/docs/concepts/firewall-rules#gateway-fws
 NODE=$(kubectl get nodes -l cloud.google.com/gke-nodepool=$NODE_POOL -o jsonpath='{.items[0].metadata.name}')
 TARGET_TAG=$(gcloud compute instances describe ${NODE} --zone=${ZONE} --project=${PROJECT_ID} --format="value(tags.items)")
 RET=$(gcloud compute firewall-rules list --filter="name~^${NETWORK_FW_NAME}$" --format="value(name)")
@@ -106,5 +107,5 @@ else
     --target-tags=$TARGET_TAG \
     --network ${VPC_NETWORK_NAME} \
     --allow=all \
-    --source-ranges=35.191.0.0/16,130.211.0.0/22
+    --source-ranges=35.191.0.0/16,130.211.0.0/22 # Google health check ip range
 fi
