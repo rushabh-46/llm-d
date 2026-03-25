@@ -61,11 +61,11 @@ decode:
       limits:
         memory: 64Gi
         cpu: "16"
-        google.com/tpu: 4
+        google.com/tpu: 8
       requests:
         memory: 64Gi
         cpu: "16"
-        google.com/tpu: 4
+        google.com/tpu: 8
     mountModelVolume: true
     volumeMounts:
     - name: metrics-volume
@@ -149,11 +149,11 @@ prefill:
       limits:
         memory: 64Gi
         cpu: "16"
-        google.com/tpu: 4
+        google.com/tpu: 8
       requests:
         memory: 64Gi
         cpu: "16"
-        google.com/tpu: 4
+        google.com/tpu: 8
     mountModelVolume: true
     volumeMounts:
     - name: metrics-volume
