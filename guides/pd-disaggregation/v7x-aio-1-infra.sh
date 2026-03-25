@@ -42,8 +42,7 @@ else
     exit 1
 fi
 
-# Create a GKE cluster and pin to a specific GKE version for test
-# reproducibility.
+# Create a GKE cluster and pin to a specific GKE version for reproducibility.
 # Command to check available gke versions on each channel in a region:
 # $ gcloud container get-server-config --region us-central1 --format="yaml(channels)"
 RET=$(gcloud container clusters list --location $LOCATION --filter="name~^${CLUSTER}$" --format="value(name)")
@@ -67,7 +66,7 @@ RET=$(gcloud container node-pools list --location $LOCATION --cluster=$CLUSTER -
 if [ -n "${RET}" ]; then
   echo "Node pool ${NODE_POOL} already existed and skip creation."
 else
-  echo "Createing node pool ${NODE_POOL} ..."
+  echo "Creating node pool ${NODE_POOL} ..."
   gcloud container node-pools create $NODE_POOL \
     --project=$PROJECT_ID \
     --cluster=$CLUSTER \
