@@ -19,7 +19,7 @@ routing:
 
 decode:
   parallelism:
-    tensor: 4
+    tensor: 8 # UPDATED: Changed from 4 to 8
   create: true
   replicas: 1
   extraConfig:
@@ -30,7 +30,7 @@ decode:
   monitoring:
     podmonitor:
       enabled: true
-      portName: "metrics" # decode vLLM service port (from routing.proxy.targetPort)
+      portName: "metrics"
       path: "/metrics"
       interval: "30s"
   containers:
@@ -38,9 +38,8 @@ decode:
     image: vllm/vllm-tpu:nightly-ironwood-20251222-6b879bf-c02a270
     modelCommand: vllmServe
     args:
-      # Keep tensor-parallelism as the first set of arguments
       - "--tensor-parallel-size"
-      - "8"
+      - "8" # Confirmed: Matches resource request
       - "--kv-transfer-config"
       - '{"kv_connector":"TPUConnector", "kv_connector_module_path" : "tpu_inference.distributed.tpu_connector", "kv_role":"kv_consumer", "kv_ip" : "$(POD_IP)"}'
       - "--disable-uvicorn-access-log"
@@ -53,6 +52,11 @@ decode:
             fieldPath: status.podIP
       - name: VLLM_LOGGING_LEVEL
         value: DEBUG
+      - name: HUGGING_FACE_HUB_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: "llm-d-hf-token"
+            key: HF_TOKEN
     ports:
       - containerPort: 8200
         name: metrics
@@ -61,11 +65,11 @@ decode:
       limits:
         memory: 64Gi
         cpu: "16"
-        google.com/tpu: "8"
+        google.com/tpu: 8 
       requests:
         memory: 64Gi
         cpu: "16"
-        google.com/tpu: "8"
+        google.com/tpu: 8
     mountModelVolume: true
     volumeMounts:
     - name: metrics-volume
@@ -108,7 +112,7 @@ decode:
 
 prefill:
   parallelism:
-    tensor: 4
+    tensor: 8 # UPDATED: Changed from 4 to 8
   create: true
   replicas: 1
   extraConfig:
@@ -119,7 +123,7 @@ prefill:
   monitoring:
     podmonitor:
       enabled: true
-      portName: "metrics" # prefill vLLM service port (from routing.servicePort)
+      portName: "metrics"
       path: "/metrics"
       interval: "30s"
   containers:
@@ -128,7 +132,7 @@ prefill:
     modelCommand: vllmServe
     args:
       - "--tensor-parallel-size"
-      - "8"
+      - "8" # Confirmed: Matches resource request
       - "--kv-transfer-config"
       - '{"kv_connector":"TPUConnector", "kv_connector_module_path" : "tpu_inference.distributed.tpu_connector", "kv_role":"kv_producer", "kv_ip" : "$(POD_IP)"}'
       - "--disable-uvicorn-access-log"
@@ -141,6 +145,11 @@ prefill:
             fieldPath: status.podIP
       - name: VLLM_LOGGING_LEVEL
         value: DEBUG
+      - name: HUGGING_FACE_HUB_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: "llm-d-hf-token"
+            key: HF_TOKEN 
     ports:
       - containerPort: 8443
         name: metrics
@@ -149,11 +158,11 @@ prefill:
       limits:
         memory: 64Gi
         cpu: "16"
-        google.com/tpu: "8"
+        google.com/tpu: "8" # UPDATED: Set to 8
       requests:
         memory: 64Gi
         cpu: "16"
-        google.com/tpu: "8"
+        google.com/tpu: "8" # UPDATED: Set to 8
     mountModelVolume: true
     volumeMounts:
     - name: metrics-volume
