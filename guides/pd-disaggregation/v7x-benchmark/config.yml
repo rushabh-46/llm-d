@@ -8,11 +8,11 @@ api:
   streaming: true
 server:
   type: vllm
-  model_name: meta-llama/Llama-3.3-70B-Instruct
+  model_name: meta-llama/Llama-3.1-70B
   base_url: http://35.209.55.248:80
   ignore_eos: true
 tokenizer:
-  pretrained_model_name_or_path: meta-llama/Llama-3.3-70B-Instruct
+  pretrained_model_name_or_path: meta-llama/Llama-3.1-70B
 data:
   type: shareGPT
 report:
