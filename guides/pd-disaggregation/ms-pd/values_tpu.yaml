@@ -5,31 +5,32 @@ accelerator:
   type: google
 
 modelArtifacts:
-  uri: "hf://meta-llama/Llama-3.3-70B-Instruct"
-  size: 200Gi
+  uri: "hf://meta-llama/Llama-3.1-8B"
+  size: 50Gi
   authSecretName: "llm-d-hf-token"
-  name: "meta-llama/Llama-3.3-70B-Instruct"
+  name: "meta-llama/Llama-3.1-8B"
 
 routing:
   servicePort: 8443
   proxy:
     image: ghcr.io/llm-d/llm-d-routing-sidecar:v0.4.0-rc.1
-    connector: nixlv2
+    # connector: nixlv2
     secure: false
 
 decode:
   parallelism:
-    tensor: 4
+    tensor: 8
   create: true
   replicas: 1
   extraConfig:
     nodeSelector:
-      cloud.google.com/gke-tpu-topology: "2x2x1"
-      cloud.google.com/gke-tpu-accelerator: "tpu7x"
+      cloud.google.com/gke-tpu-topology: "2x4"
+      cloud.google.com/gke-tpu-accelerator: "tpu-v6e-slice"
+      cloud.google.com/gke-nodepool: "tpunodepoolv6e"
   monitoring:
     podmonitor:
       enabled: true
-      portName: "metrics" # decode vLLM service port (from routing.proxy.targetPort)
+      portName: "metrics"
       path: "/metrics"
       interval: "30s"
   containers:
@@ -37,14 +38,13 @@ decode:
     image: vllm/vllm-tpu:nightly-ironwood-20251222-6b879bf-c02a270
     modelCommand: vllmServe
     args:
-      # Keep tensor-parallelism as the first set of arguments
       - "--tensor-parallel-size"
       - "8"
       - "--kv-transfer-config"
       - '{"kv_connector":"TPUConnector", "kv_connector_module_path" : "tpu_inference.distributed.tpu_connector", "kv_role":"kv_consumer", "kv_ip" : "$(POD_IP)"}'
       - "--disable-uvicorn-access-log"
       - "--max-model-len"
-      - "32000"
+      - "4096"
     env:
       - name: POD_IP
         valueFrom:
@@ -52,19 +52,24 @@ decode:
             fieldPath: status.podIP
       - name: VLLM_LOGGING_LEVEL
         value: DEBUG
+      - name: HUGGING_FACE_HUB_TOKEN
+        valueFrom:
+          secretKeyRef:
+            name: "llm-d-hf-token"
+            key: HF_TOKEN
     ports:
       - containerPort: 8200
         name: metrics
         protocol: TCP
     resources:
       limits:
-        memory: 64Gi
+        memory: 32Gi
         cpu: "16"
-        google.com/tpu: 4
+        google.com/tpu: 8 
       requests:
-        memory: 64Gi
+        memory: 32Gi
         cpu: "16"
-        google.com/tpu: 4
+        google.com/tpu: 8
     mountModelVolume: true
     volumeMounts:
     - name: metrics-volume
@@ -106,88 +111,111 @@ decode:
     emptyDir: {}
 
 prefill:
-  parallelism:
-    tensor: 4
-  create: true
-  replicas: 1
-  extraConfig:
-    nodeSelector:
-      cloud.google.com/gke-tpu-topology: "2x2x1"
-      cloud.google.com/gke-tpu-accelerator: "tpu7x"
-  monitoring:
-    podmonitor:
-      enabled: true
-      portName: "metrics" # prefill vLLM service port (from routing.servicePort)
-      path: "/metrics"
-      interval: "30s"
-  containers:
-  - name: "vllm"
-    image: vllm/vllm-tpu:nightly-ironwood-20251222-6b879bf-c02a270
-    modelCommand: vllmServe
-    args:
-      - "--tensor-parallel-size"
-      - "8"
-      - "--kv-transfer-config"
-      - '{"kv_connector":"TPUConnector", "kv_connector_module_path" : "tpu_inference.distributed.tpu_connector", "kv_role":"kv_producer", "kv_ip" : "$(POD_IP)"}'
-      - "--disable-uvicorn-access-log"
-      - "--max-model-len"
-      - "32000"
-    env:
-      - name: POD_IP
-        valueFrom:
-          fieldRef:
-            fieldPath: status.podIP
-      - name: VLLM_LOGGING_LEVEL
-        value: DEBUG
-    ports:
-      - containerPort: 8443
-        name: metrics
-        protocol: TCP
-    resources:
-      limits:
-        memory: 64Gi
-        cpu: "16"
-        google.com/tpu: 4
-      requests:
-        memory: 64Gi
-        cpu: "16"
-        google.com/tpu: 4
-    mountModelVolume: true
-    volumeMounts:
-    - name: metrics-volume
-      mountPath: /.config
-    - name: shm
-      mountPath: /dev/shm
-    - name: torch-compile-cache
-      mountPath: /.cache
-    startupProbe:
-      httpGet:
-        path: /health
-        port: 8443
-      initialDelaySeconds: 15
-      periodSeconds: 30
-      timeoutSeconds: 5
-      failureThreshold: 120
-    livenessProbe:
-      httpGet:
-        path: /health
-        port: 8443
-      periodSeconds: 10
-      timeoutSeconds: 5
-      failureThreshold: 3
-    readinessProbe:
-      httpGet:
-        path: /v1/models
-        port: 8443
-      periodSeconds: 5
-      timeoutSeconds: 2
-      failureThreshold: 3
-  volumes:
-  - name: metrics-volume
-    emptyDir: {}
-  - name: shm
-    emptyDir:
-      medium: Memory
-      sizeLimit: "16Gi"
-  - name: torch-compile-cache
-    emptyDir: {}
+  create: false # Disabling default prefill deployment
+
+extraObjects:
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: ms-pd-llm-d-modelservice-prefill
+      labels:
+        helm.sh/chart: llm-d-modelservice-v0.4.9
+        app.kubernetes.io/version: "v0.4.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          llm-d.ai/inferenceServing: "true"
+          llm-d.ai/model: random_model
+          llm-d.ai/role: prefill
+      template:
+        metadata:
+          labels:
+            llm-d.ai/inferenceServing: "true"
+            llm-d.ai/inference-serving: "true"
+            llm-d.ai/model: random_model
+            llm-d.ai/role: prefill
+        spec:
+          nodeSelector:
+            cloud.google.com/gke-nodepool: tpunodepoolv6e
+            cloud.google.com/gke-tpu-accelerator: tpu-v6e-slice
+            cloud.google.com/gke-tpu-topology: 2x4
+          serviceAccountName: ms-pd-llm-d-modelservice
+          volumes:
+            - name: metrics-volume
+              emptyDir: {}
+            - name: shm
+              emptyDir:
+                medium: Memory
+                sizeLimit: 16Gi
+            - name: torch-compile-cache
+              emptyDir: {}
+          containers:
+            - name: vllm
+              image: vllm/vllm-tpu:nightly-ironwood-20251222-6b879bf-c02a270
+              command: ["vllm", "serve"]
+              args:
+                - meta-llama/Llama-3.1-8B
+                - --port
+                - "8200"
+                - --tensor-parallel-size
+                - "8"
+                - --served-model-name
+                - "meta-llama/Llama-3.1-8B"
+                - --kv-transfer-config
+                - '{"kv_connector":"TPUConnector", "kv_connector_module_path" : "tpu_inference.distributed.tpu_connector", "kv_role":"kv_producer", "kv_ip" : "$(POD_IP)"}'
+                - --disable-uvicorn-access-log
+                - --max-model-len
+                - "32000"
+              env:
+                - name: POD_IP
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: status.podIP
+                - name: VLLM_LOGGING_LEVEL
+                  value: DEBUG
+                - name: HUGGING_FACE_HUB_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: llm-d-hf-token
+                      key: HF_TOKEN
+              ports:
+                - containerPort: 8200
+                  name: metrics
+                  protocol: TCP
+              resources:
+                limits:
+                  cpu: "16"
+                  google.com/tpu: "8"
+                  memory: 64Gi
+                requests:
+                  cpu: "16"
+                  google.com/tpu: "8"
+                  memory: 64Gi
+              readinessProbe:
+                httpGet:
+                  path: /v1/models
+                  port: 8200
+                periodSeconds: 5
+                timeoutSeconds: 2
+                failureThreshold: 3
+            - name: routing-sidecar
+              image: ghcr.io/llm-d/llm-d-routing-sidecar:v0.4.0-rc.1
+              args:
+                - "--port=8443"
+                - "--vllm-port=8200"
+                # - "--connector=nixlv2"
+                - "--secure-proxy=false"
+              env:
+                - name: HF_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: llm-d-hf-token
+                      key: HF_TOKEN
+              resources: # NO TPU REQUEST HERE
+                limits:
+                  cpu: "1"
+                requests:
+                  cpu: "1"
+
