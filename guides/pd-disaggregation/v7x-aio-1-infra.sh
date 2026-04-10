@@ -59,7 +59,7 @@ else
     --subnetwork=${VPC_NETWORK_NAME} \
     --release-channel "rapid" \
     --cluster-version="1.35.0-gke.3047000"
-fi
+fi``
 
 # Create nodepool
 RET=$(gcloud container node-pools list --location $LOCATION --cluster=$CLUSTER --filter="name~^${NODE_POOL}$" --format="value(name)")

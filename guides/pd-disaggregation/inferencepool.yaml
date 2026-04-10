@@ -1,0 +1,47 @@
+apiVersion: inference.networking.k8s.io/v1
+kind: InferencePool
+metadata:
+  annotations:
+    meta.helm.sh/release-name: gaie-pd
+    meta.helm.sh/release-namespace: llm-d-pd
+  creationTimestamp: "2026-03-24T21:23:54Z"
+  generation: 1
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: gaie-pd-epp
+    app.kubernetes.io/version: v1.2.0-rc.1
+  name: gaie-pd
+  namespace: llm-d-pd
+  resourceVersion: "1774387566936287021"
+  uid: 60270e52-c59c-4c33-9923-461af7d1ee23
+spec:
+  endpointPickerRef:
+    failureMode: FailClose
+    group: ""
+    kind: Service
+    name: gaie-pd-epp
+    port:
+      number: 9002
+  selector:
+    matchLabels:
+      llm-d.ai/inferenceServing: "true"
+  targetPorts:
+  - number: 8200
+status:
+  parents:
+  - conditions:
+    - lastTransitionTime: "2026-03-24T21:26:06Z"
+      message: ""
+      reason: ResolvedRefs
+      status: "True"
+      type: ResolvedRefs
+    - lastTransitionTime: "2026-03-24T21:26:06Z"
+      message: ""
+      reason: Accepted
+      status: "True"
+      type: Accepted
+    parentRef:
+      group: gateway.networking.k8s.io
+      kind: Gateway
+      name: infra-pd-inference-gateway
+      namespace: llm-d-pd

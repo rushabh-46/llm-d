@@ -2,17 +2,17 @@ load:
   type: constant
   stages:
   - rate: 1
-    duration: 30
+    duration: 3
 api: 
   type: completion
   streaming: true
 server:
   type: vllm
-  model_name: meta-llama/Llama-3.1-70B
-  base_url: http://35.209.55.248:80
+  model_name: meta-llama/Llama-3.1-8B
+  base_url: http://10.128.0.36:80
   ignore_eos: true
 tokenizer:
-  pretrained_model_name_or_path: meta-llama/Llama-3.1-70B
+  pretrained_model_name_or_path: meta-llama/Llama-3.1-8B
 data:
   type: shareGPT
 report:
