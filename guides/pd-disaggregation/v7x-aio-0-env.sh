@@ -10,4 +10,4 @@ export NETWORK_FW_NAME=gke-gateway-firewall-${CLUSTER}-${NODE_POOL}
 export MACHINE_TYPE=ct6e-standard-8t
 export CIDR_RANGE=172.16.0.0/26 # ATTN: Make sure the IP range does not overlap with other subnets!!!
 export NAMESPACE=llm-d-pd
-export HF_TOKEN=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
+export HF_TOKEN=<HF_TOKEN>
