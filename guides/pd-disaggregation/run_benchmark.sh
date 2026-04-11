@@ -52,7 +52,7 @@ spec:
             --dataset-path "/data/sharegpt.json" \
             --request-rate 80.0 \
             --num-prompts 2000 \
-            --tokenizer "$MODEL_NAME"
+            --tokenizer "Qwen/Qwen3-32B"
         volumeMounts:
         - name: dataset-volume
           mountPath: /data
