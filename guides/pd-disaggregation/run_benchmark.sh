@@ -3,7 +3,7 @@
 # Configuration
 NAMESPACE="disagg-1-1"
 JOB_NAME="qwen3-pd-benchmark"
-MODEL_NAME="Qwen/Qwen3-32B"
+MODEL_NAME="/models/hf-models/Qwen3-32B"
 
 echo "🔍 Discovering Gateway IP..."
 GATEWAY_IP=$(kubectl get gateway infra-pd-inference-gateway -n $NAMESPACE -o jsonpath='{.status.addresses[0].value}')
