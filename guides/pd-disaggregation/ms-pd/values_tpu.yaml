@@ -182,7 +182,7 @@ prefill:
           echo "KV_CONFIG="
           python3 -m vllm.entrypoints.openai.api_server \
             --model "/models/hf-models/Qwen3-32B" \
-            --port 8200 \
+            --port 8000 \
             --tensor-parallel-size 4 \
             --kv-transfer-config "$KV_CONFIG" \
             --disable-uvicorn-access-log \
@@ -200,7 +200,7 @@ prefill:
         - name: TPU_KV_TRANSFER_PORT
           value: "9100"
       ports:
-        - containerPort: 8200
+        - containerPort: 8000
           name: vllm
           protocol: TCP
         - containerPort: 9100

@@ -1,0 +1,158 @@
+
+# llm-d-infra Helm Chart
+
+![Version: v1.4.0](https://img.shields.io/badge/Version-v1.4.0-informational?style=flat-square)
+![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square)
+
+llm-d-infra are the infrastructure components surrounding the llm-d system - a Kubernetes-native high-performance distributed LLM inference framework
+
+## Maintainers
+
+| Name | Email | Url |
+| ---- | ------ | --- |
+| llm-d-infra |  | <https://github.com/llm-d-incubation/llm-d-infra> |
+
+## Source Code
+
+* <https://github.com/llm-d-incubation/llm-d-infra>
+
+---
+
+## TL;DR
+
+```console
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add llm-d-infra https://llm-d-incubation.github.io/llm-d-infra/
+
+helm install my-llm-d-infra llm-d-infra/llm-d-infra
+```
+
+## Prerequisites
+
+- Git (v2.25 or [latest](https://github.com/git-guides/install-git#install-git-on-linux), for sparse-checkout support)
+- Kubectl (1.25+ or [latest](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) with built-in kustomize support)
+
+```shell
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+```
+
+- Kubernetes 1.30+ (OpenShift 4.17+)
+- Helm 3.10+ or [latest release](https://github.com/helm/helm/releases)
+- [Gateway API v1.3.0](https://gateway-api.sigs.k8s.io/guides/) or [latest release](https://github.com/kubernetes-sigs/gateway-api/releases)
+- [agentgateway](https://agentgateway.dev/) or [Istio](http://istio.io/) installed in the cluster
+- `kgateway` remains supported as a deprecated compatibility mode and install path and will be removed in the next llm-d release in favor of standalone `agentgateway`
+
+## Usage
+
+Charts are available in the following formats:
+
+- [Chart Repository](https://helm.sh/docs/topics/chart_repository/)
+- [OCI Artifacts](https://helm.sh/docs/topics/registries/)
+
+### Installing from the Chart Repository
+
+The following command can be used to add the chart repository:
+
+```console
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add llm-d-infra https://llm-d-incubation.github.io/llm-d-infra/
+```
+
+Once the chart has been added, install this chart. However before doing so, please review the default `values.yaml` and adjust as needed.
+
+```console
+helm upgrade -i <release_name> llm-d-infra/llm-d-infra
+```
+
+### Installing from an OCI Registry
+
+Charts are also available in OCI format. The list of available releases can be found [here](https://github.com/orgs/llm-d/packages/container/package/llm-d-infra%2Fllm-d).
+
+Install one of the available versions:
+
+```shell
+helm upgrade -i <release_name> oci://ghcr.io/llm-d-incubation/llm-d-infra/llm-d-infra --version=<version>
+```
+
+> **Tip**: List all releases using `helm list`
+
+### Uninstalling the Chart
+
+To uninstall/delete the `my-llm-d-infra-release` deployment:
+
+```console
+helm uninstall my-llm-d-infra-release
+```
+
+The command removes all the Kubernetes components associated with the chart and deletes the release.
+
+## Requirements
+
+Kubernetes: `>= 1.28.0-0`
+
+| Repository | Name | Version |
+|------------|------|---------|
+| https://charts.bitnami.com/bitnami | common | 2.27.0 |
+
+## Values
+
+| Key | Description | Type | Default |
+|-----|-------------|------|---------|
+| clusterDomain | Default Kubernetes cluster domain | string | `"cluster.local"` |
+| common | Parameters for bitnami.common dependency | object | `{}` |
+| commonAnnotations | Annotations to add to all deployed objects | object | `{}` |
+| commonLabels | Labels to add to all deployed objects | object | `{}` |
+| extraDeploy | Array of extra objects to deploy with the release | list | `[]` |
+| fullnameOverride | String to fully override common.names.fullname | string | `""` |
+| gateway | Gateway configuration | object | See below |
+| gateway.annotations | Additional annotations provided to the Gateway resource | object | `{}` |
+| gateway.destinationRule | see: https://istio.io/latest/docs/reference/config/networking/destination-rule/ | object | `{"enabled":false,"exportTo":[],"host":"localhost","subsets":[],"trafficPolicy":{},"workloadSelector":{}}` |
+| gateway.enabled | Deploy resources related to Gateway | bool | `true` |
+| gateway.exposure | Gateway exposure intent and defaults | object | `{"type":""}` |
+| gateway.fullnameOverride | String to fully override gateway.fullname | string | `""` |
+| gateway.gatewayClassName | Deprecated: "kgateway" and "agentgateway-v2" are compatibility aliases and are rendered as "agentgateway". | string | `""` |
+| gateway.gatewayParameters.agentgateway | Shared AgentgatewayParameters for standalone "agentgateway" and the deprecated "kgateway" compatibility mode. | object | `{"env":[],"istio":{},"rawConfig":{},"shutdown":{}}` |
+| gateway.gatewayParameters.agentgateway.env | Additional environment variables for the agentgateway proxy | list | `[]` |
+| gateway.gatewayParameters.agentgateway.istio | Optional Istio integration settings for the agentgateway proxy | object | `{}` |
+| gateway.gatewayParameters.agentgateway.rawConfig | Raw agentgateway config merged into the generated configuration | object | `{}` |
+| gateway.gatewayParameters.agentgateway.shutdown | Optional shutdown behavior for the agentgateway proxy | object | `{}` |
+| gateway.gatewayParameters.enabled | Enable provider-specific infrastructure parameter resources | bool | `true` |
+| gateway.gatewayParameters.istio | Istio-specific parameters rendered into the gateway ConfigMap when gateway.provider resolves to "istio" | object | `{"accessLogging":true}` |
+| gateway.gatewayParameters.istio.accessLogging | For istio to include access logging or not | bool | `true` |
+| gateway.gatewayParameters.logLevel | Log level for provider-managed gateway data plane components | string | `"warn"` |
+| gateway.gatewayParameters.resources | Resource requests/limits <br /> Ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-requests-and-limits-of-pod-and-container | object | `{"limits":{"cpu":"2","memory":"1Gi"},"requests":{"cpu":"100m","memory":"128Mi"}}` |
+| gateway.labels | Additional labels provided to the Gateway resource | object | `{}` |
+| gateway.listeners | Set of listeners exposed via the Gateway, also propagated to the Ingress if enabled | list | `[{"allowedRoutes":{"namespaces":{"from":"All"}},"name":"default","port":80,"protocol":"HTTP"}]` |
+| gateway.nameOverride | String to partially override gateway.fullname | string | `""` |
+| gateway.provider | Deprecated: "kgateway" selects the deprecated kgateway compatibility mode and install path and will be removed in the next llm-d release. | string | `"istio"` |
+| gateway.service | Gateway service configuration | object | `{"type":""}` |
+| gateway.tls | TLS configuration for gateway | object | See below |
+| gateway.tls.referenceGrant | ReferenceGrant configuration for cross-namespace TLS certificate access | object | See below |
+| gateway.tls.referenceGrant.enabled | Enable ReferenceGrant creation (disabled by default) | bool | `false` |
+| gateway.tls.referenceGrant.name | Name of the ReferenceGrant resource (defaults to gateway name with -tls suffix) | string | `""` |
+| gateway.tls.referenceGrant.secretName | Name of the TLS secret to grant access to | string | `""` |
+| gateway.tls.referenceGrant.secretNamespace | Namespace where the TLS secret resides | string | `""` |
+| gateway.tls.servingCertSecretName | Name of the secret for serving certificates (used by data-science-gateway-class) | string | `"data-science-gateway-service-tls"` |
+| ingress | Ingress configuration | object | See below |
+| ingress.annotations | Additional annotations for the Ingress resource | object | `{}` |
+| ingress.enabled | Deploy Ingress (effective gateway service type must be ClusterIP) | bool | `false` |
+| ingress.extraHosts | List of additional hostnames to be covered with this ingress record (e.g. a CNAME) <!-- E.g. extraHosts:   - name: llm-d.env.example.com     path: / (Optional)     pathType: Prefix (Optional)     port: 7007 (Optional) --> | list | `[]` |
+| ingress.extraTls | The TLS configuration for additional hostnames to be covered with this ingress record. <br /> Ref: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls <!-- E.g. extraTls:   - hosts:     - llm-d.env.example.com     secretName: llm-d-env --> | list | `[]` |
+| ingress.host | Hostname used to expose the gateway when the effective service type is ClusterIP | string | `""` |
+| ingress.ingressClassName | Name of the IngressClass cluster resource which defines which controller will implement the resource (e.g nginx) | string | `""` |
+| ingress.path | Path to be used to expose the full route to access the inferencing gateway | string | `"/"` |
+| ingress.tls | Ingress TLS parameters | object | `{"enabled":false,"secretName":""}` |
+| ingress.tls.enabled | Enable TLS configuration for the host defined at `ingress.host` parameter | bool | `false` |
+| ingress.tls.secretName | The name to which the TLS Secret will be called | string | `""` |
+| kubeVersion | Override Kubernetes version | string | `""` |
+| nameOverride | String to partially override common.names.fullname | string | `""` |
+
+## Features
+
+This chart deploys all infrastructure required to run the [llm-d](https://llm-d.ai/) project. It includes:
+
+- A Gateway
+- AgentgatewayParameters for standalone agentgateway and the deprecated kgateway compatibility mode
+- An optional ingress to sit in front of the gateway

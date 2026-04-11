@@ -32,7 +32,7 @@ environments:
 
 ---
 
-{{- $ns := .Namespace | default "llm-d-pd" -}}
+{{- $ns := .Namespace | default "disagg-1-1" -}}
 {{- $rn := (env "RELEASE_NAME_POSTFIX") | default "pd" -}}
 
 repositories:
@@ -44,7 +44,7 @@ repositories:
 releases:
   - name: {{ printf "infra-%s" $rn | quote }}
     namespace: {{ $ns }}
-    chart: llm-d-infra/llm-d-infra
+    chart: ./llm-d-infra
     version: v1.4.0
     installed: true
     labels:

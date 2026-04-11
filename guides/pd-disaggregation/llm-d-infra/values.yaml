@@ -1,0 +1,416 @@
+# yaml-language-server: $schema=values.schema.json
+
+# Default values for the llm-d-infra chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# @schema
+# additionalProperties: true
+# @schema
+# -- Parameters for bitnami.common dependency
+common: {}
+
+# -- Common parameters
+# -- Override Kubernetes version
+kubeVersion: ""
+
+# -- String to partially override common.names.fullname
+nameOverride: ""
+
+# -- String to fully override common.names.fullname
+fullnameOverride: ""
+
+# -- Default Kubernetes cluster domain
+clusterDomain: cluster.local
+
+# @schema
+# additionalProperties: true
+# @schema
+# -- Labels to add to all deployed objects
+commonLabels: {}
+
+# @schema
+# additionalProperties: true
+# @schema
+# -- Annotations to add to all deployed objects
+commonAnnotations: {}
+
+# @schema
+# items:
+#   type: [string, object]
+# @schema
+# -- Array of extra objects to deploy with the release
+extraDeploy: []
+
+# -- Sample application deploying a p-d pair of specific model
+# @default -- See below
+
+# -- Gateway configuration
+# @default -- See below
+gateway:
+  # -- Deploy resources related to Gateway
+  enabled: true
+
+  # --  String to fully override gateway.fullname
+  fullnameOverride: ""
+
+  # -- String to partially override gateway.fullname
+  nameOverride: ""
+
+  # @schema
+  # default: istio
+  # enum: ["",istio,kgateway,agentgateway,gke-l7-regional-external-managed]
+  # @schema
+  # -- Gateway implementation used by this chart to render provider-specific infrastructure.
+  # -- Defaults to "istio". Set to empty to infer the implementation from gateway.gatewayClassName for backward compatibility.
+  # -- Set gateway.gatewayClassName to "data-science-gateway-class" to use the OpenShift Service Mesh GatewayClass with Istio-backed rendering.
+  # -- Deprecated: "kgateway" selects the deprecated kgateway compatibility mode and install path and will be removed in the next llm-d release.
+  provider: istio
+
+  # -- Gateway class that determines the backend used
+  # -- Leave empty to use the default class name for the selected provider.
+  # -- With the default provider, this renders as "istio". With "kgateway" or "agentgateway", this renders as "agentgateway".
+  # -- Set to "data-science-gateway-class" to use the OpenShift Service Mesh GatewayClass with Istio-backed rendering.
+  # -- Deprecated: "kgateway" and "agentgateway-v2" are compatibility aliases and are rendered as "agentgateway".
+  gatewayClassName: ""
+
+  # @schema
+  # additionalProperties: true
+  # @schema
+  # -- Additional labels provided to the Gateway resource
+  labels: {}
+
+  # @schema
+  # additionalProperties: true
+  # @schema
+  # -- Additional annotations provided to the Gateway resource
+  annotations: {}
+
+  # Shared parameters applied to provider-specific infrastructure resources
+  gatewayParameters:
+    # -- Enable provider-specific infrastructure parameter resources
+    enabled: true
+
+    # @schema
+    # default: warn
+    # enum: [error,warn,info,debug]
+    # @schema
+    # -- Log level for provider-managed gateway data plane components
+    logLevel: warn
+
+    # @schema
+    # $ref: https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/master/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements
+    # @schema
+    # -- Modify resource limits/requests available to the provider-managed data plane pod
+    # -- Resource requests/limits
+    # <br /> Ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-requests-and-limits-of-pod-and-container
+    resources:
+      limits:
+        cpu: "2"
+        memory: 1Gi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+
+    # @schema
+    # additionalProperties: false
+    # @schema
+    # -- Istio-specific parameters rendered into the gateway ConfigMap when gateway.provider resolves to "istio"
+    istio:
+      # -- For istio to include access logging or not
+      accessLogging: true
+
+    # @schema
+    # additionalProperties: false
+    # @schema
+    # -- Agentgateway-specific parameters rendered into AgentgatewayParameters when gateway.provider resolves to "kgateway" or "agentgateway"
+    # -- Shared AgentgatewayParameters for standalone "agentgateway" and the deprecated "kgateway" compatibility mode.
+    agentgateway:
+      # @schema
+      # type: array
+      # items:
+      #   type: object
+      #   additionalProperties: true
+      # @schema
+      # -- Additional environment variables for the agentgateway proxy
+      env: []
+
+      # @schema
+      # type: object
+      # additionalProperties: true
+      # @schema
+      # -- Raw agentgateway config merged into the generated configuration
+      rawConfig: {}
+
+      # @schema
+      # type: object
+      # additionalProperties: false
+      # properties:
+      #   min:
+      #     type: integer
+      #     minimum: 0
+      #   max:
+      #     type: integer
+      #     minimum: 0
+      # @schema
+      # -- Optional shutdown behavior for the agentgateway proxy
+      shutdown: {}
+
+      # @schema
+      # type: object
+      # additionalProperties: false
+      # properties:
+      #   caAddress:
+      #     type: string
+      #   trustDomain:
+      #     type: string
+      # @schema
+      # -- Optional Istio integration settings for the agentgateway proxy
+      istio: {}
+
+  # @schema
+  # type: object
+  # additionalProperties: false
+  # properties:
+  #   type:
+  #     type: string
+  #     description: >
+  #       Exposure intent for the gateway. Leave empty to use the chart's
+  #       provider-specific default. "external" defaults the effective service
+  #       type to LoadBalancer. "internal" defaults it to ClusterIP.
+  #     enum: ["", internal, external]
+  #     default: ""
+  # @schema
+  # -- Gateway exposure intent and defaults
+  exposure:
+    type: ""
+
+  # @schema
+  # type: object
+  # additionalProperties: false
+  # properties:
+  #   type:
+  #     type: string
+  #     description: >
+  #       Gateway's service type. Leave empty to derive it from
+  #       gateway.exposure.type, which defaults from the selected provider.
+  #       Ingress is only available if the effective service type is ClusterIP.
+  #       Accepted values: ["", "LoadBalancer","ClusterIP","NodePort"].
+  #     enum: ["", LoadBalancer, ClusterIP, NodePort]
+  #     default: ""
+  #   ports:
+  #     type: array
+  #     description: >
+  #       Optional. List of service ports. If provided, each item must include "port".
+  #     items:
+  #       type: object
+  #       additionalProperties: true
+  #       required: [port]
+  #       properties:
+  #         port:
+  #           description: >
+  #             Port is the network port. Multiple listeners may use the same port
+  #             (subject to compatibility rules).
+  #           type: integer
+  #           minimum: 1
+  #           maximum: 65535
+  #         nodePort:
+  #           type: integer
+  #           minimum: 30000
+  #           maximum: 32767
+  #   loadBalancerClass:
+  #     type: string
+  #     description: >
+  #       Optional. LoadBalancerClass is the class of the load balancer to use.
+  #       Ref: https://kubernetes.io/docs/concepts/services-networking/service/#load-balancer-class
+  # @schema
+  # -- Gateway service configuration
+  service:
+    type: ""
+    # ports:
+    #   - port: 80
+    # loadBalancerClass: "metallb"
+
+  # -- TLS configuration for gateway
+  # @default -- See below
+  tls:
+    # -- Name of the secret for serving certificates (used by data-science-gateway-class)
+    servingCertSecretName: data-science-gateway-service-tls
+
+    # -- ReferenceGrant configuration for cross-namespace TLS certificate access
+    # @default -- See below
+    referenceGrant:
+      # -- Enable ReferenceGrant creation (disabled by default)
+      enabled: false
+
+      # -- Name of the ReferenceGrant resource (defaults to gateway name with -tls suffix)
+      name: ""
+
+      # -- Namespace where the TLS secret resides
+      secretNamespace: ""
+
+      # -- Name of the TLS secret to grant access to
+      secretName: ""
+
+  # @schema
+  # additionalProperties: true
+  # @schema
+  # Configuration for Istio DestinationRule to control traffic policy for this service.
+  # -- see: https://istio.io/latest/docs/reference/config/networking/destination-rule/
+  destinationRule:
+    enabled: false
+    host: "localhost"
+
+    # @schema
+    # additionalProperties: true
+    # @schema
+    # Optional: Apply a mesh-wide traffic policy
+    trafficPolicy: {}
+
+    # Optional: Define subsets for versioned routing (e.g., by labels)
+    subsets: []
+
+    # Optional: Control which namespaces can access this DestinationRule
+    exportTo: []
+
+    # @schema
+    # additionalProperties: true
+    # @schema
+    # Optional: Apply only to specific workloads (via selector labels)
+    workloadSelector: {}
+
+  # @schema
+  # type: array
+  # minItems: 1
+  # items:
+  #   type: object
+  #   additionalProperties: true
+  #   required: [port, protocol]
+  #   properties:
+  #     name:
+  #       description: Name is the name of the Listener. This name MUST be unique within a Gateway.
+  #       type: string
+  #     port:
+  #       description: Port is the network port. Multiple listeners may use the same port (subject to compatibility rules).
+  #       type: integer
+  #       minimum: 1
+  #       maximum: 65535
+  #     protocol:
+  #       description: Protocol specifies the network protocol this listener expects to receive.
+  #       type: string
+  #     allowedRoutes:
+  #       type: object
+  #       description: AllowedRoutes defines the types of routes that MAY be attached to a Listener and the trusted namespaces where those Route resources MAY be present.
+  #       additionalProperties: true
+  #     tls:
+  #       type: object
+  #       description: TLS configuration for the Listener. Required when protocol is HTTPS or TLS.
+  #       properties:
+  #         hostname:
+  #           type: string
+  #           description: Hostname to match for TLS SNI. Required for TLS termination.
+  #         mode:
+  #           type: string
+  #           description: TLS mode. Typically "Terminate" for TLS termination at the gateway.
+  #           enum: [Terminate, Passthrough]
+  #         certificateRefs:
+  #           type: array
+  #           description: References to Kubernetes Secrets containing TLS certificates.
+  #           items:
+  #             type: object
+  #             required: [name]
+  #             properties:
+  #               name:
+  #                 type: string
+  #                 description: Name of the Secret containing the TLS certificate.
+  #                 minLength: 1
+  #                 maxLength: 253
+  #               group:
+  #                 type: string
+  #                 description: Group is the group of the referent. When unspecified or empty string, core API group is inferred.
+  #                 default: ""
+  #                 maxLength: 253
+  #                 pattern: ^$|^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+  #               kind:
+  #                 type: string
+  #                 description: Kind is kind of the referent.
+  #                 default: Secret
+  #                 minLength: 1
+  #                 maxLength: 63
+  #                 pattern: ^[a-zA-Z]([-a-zA-Z0-9]*[a-zA-Z0-9])?$
+  #               namespace:
+  #                 type: string
+  #                 description: Namespace is the namespace of the referenced object. When unspecified, the local namespace is inferred.
+  #                 minLength: 1
+  #                 maxLength: 63
+  #                 pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+  # @schema
+  # -- Set of listeners exposed via the Gateway, also propagated to the Ingress if enabled
+  listeners:
+    - name: default
+      port: 80
+      protocol: HTTP
+      allowedRoutes:
+        namespaces:
+          from: All
+      # -- Optional TLS configuration for HTTPS listeners
+      # tls:
+      #   hostname: "api.example.com"
+      #   mode: "Terminate"  # or "Passthrough"
+      #   certificateRefs:
+      #     - name: "my-tls-cert"
+      #       # kind: "Secret"  # Optional. Defaults to "Secret"
+      #       # namespace: "default"  # Optional. Defaults to Gateway's namespace
+
+# -- Ingress configuration
+# @default -- See below
+ingress:
+  # -- Deploy Ingress (effective gateway service type must be ClusterIP)
+  enabled: false
+
+  # -- Name of the IngressClass cluster resource which defines which controller will implement the resource (e.g nginx)
+  ingressClassName: ""
+
+  # @schema
+  # additionalProperties: true
+  # @schema
+  # -- Additional annotations for the Ingress resource
+  annotations: {}
+
+  # -- Hostname used to expose the gateway when the effective service type is ClusterIP
+  host: ""
+
+  # -- List of additional hostnames to be covered with this ingress record (e.g. a CNAME)
+  # <!-- E.g.
+  # extraHosts:
+  #   - name: llm-d.env.example.com
+  #     path: / (Optional)
+  #     pathType: Prefix (Optional)
+  #     port: 7007 (Optional) -->
+  extraHosts: []
+
+  # -- Path to be used to expose the full route to access the inferencing gateway
+  path: "/"
+
+  # -- Ingress TLS parameters
+  tls:
+    # -- Enable TLS configuration for the host defined at `ingress.host` parameter
+    enabled: false
+
+    # -- The name to which the TLS Secret will be called
+    secretName: ""
+
+  # @schema
+  # items:
+  #   $ref: https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/master/_definitions.json#/definitions/io.k8s.api.networking.v1.IngressTLS
+  # @schema
+  # -- The TLS configuration for additional hostnames to be covered with this ingress record.
+  # <br /> Ref: https://kubernetes.io/docs/concepts/services-networking/ingress/#tls
+  # <!-- E.g.
+  # extraTls:
+  #   - hosts:
+  #     - llm-d.env.example.com
+  #     secretName: llm-d-env -->
+  extraTls: []
+
+  rules: []

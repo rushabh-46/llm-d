@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # Configuration
-NAMESPACE="llm-d-pd"
+NAMESPACE="disagg-1-1"
 JOB_NAME="qwen3-pd-benchmark"
 MODEL_NAME="Qwen/Qwen3-32B"
 
 echo "🔍 Discovering Gateway IP..."
-GATEWAY_IP=10.128.0.15
+GATEWAY_IP=$(kubectl get gateway infra-pd-inference-gateway -n $NAMESPACE -o jsonpath='{.status.addresses[0].value}')
 
 
 TARGET_URL="http://$GATEWAY_IP"
