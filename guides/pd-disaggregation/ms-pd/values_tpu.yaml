@@ -65,6 +65,7 @@ decode:
           echo "KV_CONFIG="
           python3 -m vllm.entrypoints.openai.api_server \
             --model "/models/hf-models/Qwen3-32B" \
+            --served-model-name "Qwen/Qwen3-32B" \
             --port 8200 \
             --tensor-parallel-size 4 \
             --kv-transfer-config "$KV_CONFIG" \
@@ -72,12 +73,15 @@ decode:
             --max-num-seqs 256 \
             --block-size 128 \
             --gpu-memory-utilization 0.90 \
-            --max-model-len 8192
+            --max-model-len 8192 \
+            --profiler-config '{"profiler": "torch", "torch_profiler_dir": "/mnt/traces", "torch_profiler_with_stack": false}'
       env:
         - name: POD_IP
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: VLLM_TORCH_PROFILER_DIR
+          value: "/mnt/traces"
         - name: TPU_SIDE_CHANNEL_PORT
           value: "9600"
         - name: TPU_KV_TRANSFER_PORT
@@ -111,9 +115,11 @@ decode:
           mountPath: /.cache
         - name: model-volume
           mountPath: /models
+        - name: profiler-traces
+          mountPath: /mnt/traces
       startupProbe:
         httpGet:
-          path: /health
+          path: /v1/models
           port: vllm
         initialDelaySeconds: 15
         periodSeconds: 30
@@ -141,6 +147,8 @@ decode:
         medium: Memory
         sizeLimit: "16Gi"
     - name: torch-compile-cache
+      emptyDir: {}
+    - name: profiler-traces
       emptyDir: {}
     - name: model-volume
       csi:
@@ -182,6 +190,7 @@ prefill:
           echo "KV_CONFIG="
           python3 -m vllm.entrypoints.openai.api_server \
             --model "/models/hf-models/Qwen3-32B" \
+            --served-model-name "Qwen/Qwen3-32B" \
             --port 8000 \
             --tensor-parallel-size 4 \
             --kv-transfer-config "$KV_CONFIG" \
@@ -189,12 +198,15 @@ prefill:
             --enable-chunked-prefill \
             --block-size 128 \
             --gpu-memory-utilization 0.90 \
-            --max-model-len 8192
+            --max-model-len 8192 \
+            --profiler-config '{"profiler": "torch", "torch_profiler_dir": "/mnt/traces", "torch_profiler_with_stack": false}'
       env:
         - name: POD_IP
           valueFrom:
             fieldRef:
               fieldPath: status.podIP
+        - name: VLLM_TORCH_PROFILER_DIR
+          value: "/mnt/traces"
         - name: TPU_SIDE_CHANNEL_PORT
           value: "9600"
         - name: TPU_KV_TRANSFER_PORT
@@ -228,9 +240,11 @@ prefill:
           mountPath: /.cache
         - name: model-volume
           mountPath: /models
+        - name: profiler-traces
+          mountPath: /mnt/traces
       startupProbe:
         httpGet:
-          path: /health
+          path: /v1/models
           port: vllm
         initialDelaySeconds: 15
         periodSeconds: 30
@@ -258,6 +272,8 @@ prefill:
         medium: Memory
         sizeLimit: "16Gi"
     - name: torch-compile-cache
+      emptyDir: {}
+    - name: profiler-traces
       emptyDir: {}
     - name: model-volume
       csi:
