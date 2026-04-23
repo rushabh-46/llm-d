@@ -2,7 +2,7 @@
 # Script to profile disaggregated vLLM serving
 # It starts profiling on all vLLM pods, runs the benchmark, waits for completion, and then stops profiling.
 
-NAMESPACE="disagg-1-1"
+export NAMESPACE="llm-d-pd"
 JOB_NAME="custom-load-generator"
 
 # Get pod names
@@ -35,8 +35,6 @@ export CONCURRENCY=2
 echo "⏳ Waiting for benchmark job to finish..."
 kubectl wait --for=condition=complete job/$JOB_NAME -n $NAMESPACE --timeout=600s
 
-echo "⏱️ Waiting additional 10 seconds as requested..."
-sleep 10
 
 # Stop profiling in parallel
 echo "Stopping profile on Prefill and Decode pod..."

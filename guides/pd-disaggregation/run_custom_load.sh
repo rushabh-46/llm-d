@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-NAMESPACE="${NAMESPACE:-disagg-1-1}"
+NAMESPACE="${NAMESPACE:-llm-d-pd}"
 JOB_NAME="custom-load-generator"
 NUM_REQUESTS="${NUM_REQUESTS:-10}"
 CONCURRENCY="${CONCURRENCY:-5}"
@@ -66,6 +66,8 @@ spec:
 
           def send_request(i):
               prompt = random.choice(prompts) if prompts else "Hello"
+              # Add random salt at the beginning to avoid prefix cache hits
+              prompt = f"Random salt {random.randint(0, 1000000)}: " + prompt
               
               payload = {
                   "model": MODEL,

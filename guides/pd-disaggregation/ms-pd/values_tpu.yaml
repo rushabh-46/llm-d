@@ -55,7 +55,8 @@ decode:
       interval: "30s"
   containers:
     - name: "vllm"
-      image: "vllm/vllm-tpu:nightly"
+      image: "us-west2-docker.pkg.dev/xprof-plugin-project/maniket-vllm-repo/vllm-image:tag3"
+      imagePullPolicy: Always
       command:
         - "/bin/bash"
         - "-c"
@@ -82,6 +83,8 @@ decode:
               fieldPath: status.podIP
         - name: VLLM_TORCH_PROFILER_DIR
           value: "/mnt/traces"
+        - name: HOST_TRACER_LEVEL
+          value: "2"
         - name: TPU_SIDE_CHANNEL_PORT
           value: "9600"
         - name: TPU_KV_TRANSFER_PORT
@@ -180,7 +183,8 @@ prefill:
       interval: "30s"
   containers:
     - name: "vllm"
-      image: "vllm/vllm-tpu:nightly"
+      image: "us-west2-docker.pkg.dev/xprof-plugin-project/maniket-vllm-repo/vllm-image:tag3"
+      imagePullPolicy: Always
       command:
         - "/bin/bash"
         - "-c"
@@ -207,6 +211,8 @@ prefill:
               fieldPath: status.podIP
         - name: VLLM_TORCH_PROFILER_DIR
           value: "/mnt/traces"
+        - name: HOST_TRACER_LEVEL
+          value: "2"
         - name: TPU_SIDE_CHANNEL_PORT
           value: "9600"
         - name: TPU_KV_TRANSFER_PORT
