@@ -55,7 +55,7 @@ decode:
       interval: "30s"
   containers:
     - name: "vllm"
-      image: "us-west2-docker.pkg.dev/xprof-plugin-project/maniket-vllm-repo/vllm-image:tag3"
+      image: "us-west2-docker.pkg.dev/xprof-plugin-project/maniket-vllm-repo/vllm-image:tag19"
       imagePullPolicy: Always
       command:
         - "/bin/bash"
@@ -183,7 +183,7 @@ prefill:
       interval: "30s"
   containers:
     - name: "vllm"
-      image: "us-west2-docker.pkg.dev/xprof-plugin-project/maniket-vllm-repo/vllm-image:tag3"
+      image: "us-west2-docker.pkg.dev/xprof-plugin-project/maniket-vllm-repo/vllm-image:tag19"
       imagePullPolicy: Always
       command:
         - "/bin/bash"

@@ -58,7 +58,9 @@ spec:
                   if "conversations" in item and len(item["conversations"]) > 0:
                       first_conv = item["conversations"][0]
                       if first_conv.get("from") == "human":
-                          prompts.append(first_conv.get("value"))
+                          value = first_conv.get("value")
+                          if value and 600 < len(value) < 20000: # Ensure prompt is long enough but not too long
+                              prompts.append(value)
               print(f"Loaded {len(prompts)} prompts.")
           except Exception as e:
               print(f"Error loading dataset: {e}")
@@ -79,8 +81,25 @@ spec:
               try:
                   resp = requests.post(URL, json=payload)
                   latency = time.time() - start
-                  print(f"Req {i}: Status {resp.status_code}, Prompt Len {len(prompt)}, Latency {latency:.2f}s")
-                  return latency
+                  
+                  is_valid = False
+                  generated_text = ""
+                  if resp.status_code == 200:
+                      try:
+                          res_json = resp.json()
+                          if "choices" in res_json and len(res_json["choices"]) > 0:
+                              generated_text = res_json["choices"][0].get("text", "")
+                              if generated_text:
+                                  is_valid = True
+                      except Exception as json_err:
+                          print(f"Req {i}: JSON parse error: {json_err}")
+                  
+                  if is_valid:
+                      print(f"Req {i}: Status {resp.status_code}, Prompt Len {len(prompt)}, Latency {latency:.2f}s, Valid: Yes, Generated Len: {len(generated_text)}")
+                      return latency
+                  else:
+                      print(f"Req {i}: Status {resp.status_code}, Prompt Len {len(prompt)}, Latency {latency:.2f}s, Valid: NO, Response: {resp.text[:100]}")
+                      return None
               except Exception as e:
                   print(f"Req {i}: Error {e}")
                   return None

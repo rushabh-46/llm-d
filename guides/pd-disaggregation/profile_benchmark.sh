@@ -28,8 +28,8 @@ wait
 echo "Profiler started on both pods."
 
 echo "Running benchmark..."
-export NUM_REQUESTS=5
-export CONCURRENCY=2
+export NUM_REQUESTS=4
+export CONCURRENCY=4
 ./guides/pd-disaggregation/run_custom_load.sh
 
 echo "⏳ Waiting for benchmark job to finish..."
