@@ -2,12 +2,11 @@
 
 # Configuration
 NAMESPACE="${NAMESPACE:-disagg-1-1}"
-JOB_NAME="qwen3-pd-benchmark"
+JOB_NAME="qwen3-pd-benchmark-small"
 MODEL_NAME="Qwen/Qwen3-32B"
 
 echo "🔍 Discovering Gateway IP..."
 GATEWAY_IP=$(kubectl get gateway infra-pd-inference-gateway -n $NAMESPACE -o jsonpath='{.status.addresses[0].value}')
-
 
 TARGET_URL="http://$GATEWAY_IP"
 echo "✅ Found Gateway at: " $TARGET_URL
@@ -44,14 +43,14 @@ spec:
             sleep 10
           done
 
-          # 3. Run Benchmark
+          # 3. Run Benchmark (Small run: 1 prompt)
           vllm bench serve \
             --base-url "$TARGET_URL" \
             --model "$MODEL_NAME" \
             --dataset-name "sharegpt" \
             --dataset-path "/data/sharegpt.json" \
-            --request-rate 80.0 \
-            --num-prompts 2000 \
+            --request-rate 1.0 \
+            --num-prompts 1 \
             --tokenizer "Qwen/Qwen3-32B"
         volumeMounts:
         - name: dataset-volume
